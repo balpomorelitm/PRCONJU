@@ -586,7 +586,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 			  .join('');
 			
 			const botones = conjugationsToShow;
-          feedback.innerHTML = `❌ <em>Clue 1:</em> ` + botones;
+          const tooltipText = "Orden de colores: yo(amarillo), tú(naranja), vos(naranja oscuro), él/ella(rosa), nosotros(morado), vosotros(azul), ellos/ellas(blanco)";
+		  feedback.innerHTML = `❌ <em>Clue 1:</em> <span title="${tooltipText}">ℹ️</span> ` + botones;
           playFromStart(soundElectricShock);
           currentQuestion.hintLevel = 1;
         }
