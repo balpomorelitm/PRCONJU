@@ -569,6 +569,9 @@ button:hover {
 .no-clues-left {
   text-decoration: line-through;
   opacity: 0.6;
+  background-color: #777;
+  color: #ddd;
+  cursor: not-allowed;
 }
 button:active {
     box-shadow: none;
