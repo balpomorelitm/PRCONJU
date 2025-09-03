@@ -482,6 +482,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function updateClueButtonUI() {
     if (!clueButton) return;
+    let noMoreClues = false;
+    if (currentQuestion && currentOptions) {
+      if (currentOptions.mode === 'receptive' || currentOptions.mode === 'productive_easy') {
+        noMoreClues = currentQuestion.hintLevel >= 1;
+      } else if (currentOptions.mode === 'productive') {
+        noMoreClues = currentQuestion.hintLevel >= 2;
+      }
+    }
+
+    clueButton.disabled = noMoreClues;
+    clueButton.classList.toggle('no-clues-left', noMoreClues);
+
+    if (noMoreClues) {
+      clueButton.textContent = 'No more clues';
+      return;
+    }
 
     if (selectedGameMode === 'timer') {
       if (freeClues > 0) {
@@ -566,6 +582,7 @@ function displayClue() {
     feedback.innerHTML = `💡 The English infinitive is <strong>${verbData.infinitive_en}</strong>.`;
     ansEN.value = '';
     setTimeout(() => ansEN.focus(), 0);
+    currentQuestion.hintLevel = 1;
   } else if (currentOptions.mode === 'productive' || currentOptions.mode === 'productive_easy') {
     if (currentOptions.mode === 'productive_easy') {
       if (currentQuestion.hintLevel === 0) {
@@ -645,6 +662,7 @@ function displayClue() {
     ansES.value = '';
     setTimeout(() => ansES.focus(), 0);
   }
+  updateClueButtonUI();
 }
 
   function onClueButtonClick() {
@@ -2913,6 +2931,7 @@ const pronounGroupMap = {
             playFromStart(soundElectricShock);
                         feedback.innerHTML = `❌ Pista: el infinitivo es <strong>${verbData.infinitive_en}</strong>.`;
             currentQuestion.hintLevel = 1;
+            updateClueButtonUI();
             ansEN.value = '';
             ansEN.focus();
         }
@@ -2922,6 +2941,7 @@ const pronounGroupMap = {
        feedback.innerHTML = `Error: No se pudo procesar la pregunta. La pista es el infinitivo: <strong>${verbData.infinitive_en}</strong>.`;
        playFromStart(soundElectricShock);
        currentQuestion.hintLevel = 1;
+       updateClueButtonUI();
        ansEN.value = '';
        ansEN.focus();
        return;
@@ -3241,10 +3261,12 @@ if (reflexiveBonus > 0) {
           }
 
           feedback.innerHTML = hintMessage;
+          currentQuestion.hintLevel = 1;
+          updateClueButtonUI();
           ansEN.value = '';
           setTimeout(() => ansEN.focus(), 0);
           return; // Solo hacer return aquí si es la primera pista
-          
+
         } else if (currentOptions.mode === 'productive' || currentOptions.mode === 'productive_easy') {
           if (currentOptions.mode === 'productive_easy') {
             if (currentQuestion.hintLevel === 0) {
@@ -3269,12 +3291,14 @@ if (reflexiveBonus > 0) {
               feedback.innerHTML = `❌ <em>Clue 1:</em> <span title="${tooltipText}">ℹ️</span> ` + botones;
               playFromStart(soundElectricShock);
               currentQuestion.hintLevel = 1;
+              updateClueButtonUI();
             }
           } else {
             if (currentQuestion.hintLevel === 0) {
               feedback.innerHTML = `❌ <em>Clue 1:</em> infinitive is <strong>${currentQuestion.verb.infinitive_es}</strong>.`;
               playFromStart(soundElectricShock);
               currentQuestion.hintLevel = 1;
+              updateClueButtonUI();
             } else if (currentQuestion.hintLevel === 1) {
               const conjTenseKey = currentQuestion.tenseKey;
               const conj = currentQuestion.verb.conjugations[conjTenseKey];
@@ -3285,6 +3309,7 @@ if (reflexiveBonus > 0) {
               feedback.innerHTML = `❌ <em>Clue 2:</em> ` + botones;
               playFromStart(soundElectricShock);
               currentQuestion.hintLevel = 2;
+              updateClueButtonUI();
             }
           }
           ansES.value = '';
