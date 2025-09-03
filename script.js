@@ -3153,34 +3153,34 @@ if (reflexiveBonus > 0) {
     feedback.classList.add('vibrate'); 
 
     return;   
-  } else {
-    // --- INCORRECT ANSWER ---
-    if (isStudyMode) {
-      safePlay(soundWrongStudy);
     } else {
-      safePlay(soundWrong);
-    }
-    chuacheSpeaks('wrong');
-    streak = 0;
-    multiplier = 1.0;
+      // --- INCORRECT ANSWER ---
+      if (isStudyMode) {
+        safePlay(soundWrongStudy);
+      } else {
+        safePlay(soundWrong);
+      }
+      chuacheSpeaks('wrong');
+      streak = 0;
+      multiplier = 1.0;
 
-    if (isPrizeVerbActive) {
-      isPrizeVerbActive = false;
-      qPrompt.classList.remove('prize-verb-active');
-    }
+      if (isPrizeVerbActive) {
+        isPrizeVerbActive = false;
+        qPrompt.classList.remove('prize-verb-active');
+      }
 
-    if (selectedGameMode === 'timer') {
-      const penalty = calculateTimePenalty(currentLevel);
-      timerTimeLeft = Math.max(0, timerTimeLeft - penalty);
-      checkTickingSound();
-      showTimeChange(-penalty);
-    } else {
-      timerTimeLeft = Math.max(0, timerTimeLeft - 3);
-      checkTickingSound();
-      showTimeChange(-3);
-    }
+      if (selectedGameMode === 'timer') {
+        const penalty = calculateTimePenalty(currentLevel);
+        timerTimeLeft = Math.max(0, timerTimeLeft - penalty);
+        checkTickingSound();
+        showTimeChange(-penalty);
+      } else {
+        timerTimeLeft = Math.max(0, timerTimeLeft - 3);
+        checkTickingSound();
+        showTimeChange(-3);
+      }
 
-    if (selectedGameMode === 'lives') {
+      if (selectedGameMode === 'lives') {
         const penalty = 1 + currentLevel;
         remainingLives -= penalty;
         currentStreakForLife = 0;
@@ -3191,107 +3191,127 @@ if (reflexiveBonus > 0) {
         updateStreakForLifeDisplay();
         updateGameTitle();              
         if (remainingLives <= 0) {
-            safePlay(soundGameOver);
-            chuacheSpeaks('gameover');
-            gameTitle.textContent = '💀 ¡Estás MUERTO!';
-            checkAnswerButton.disabled = true;
-            clueButton.disabled = true;
-            skipButton.disabled  = true;
-            ansEN.disabled = true;
-            ansES.disabled = true;
+          safePlay(soundGameOver);
+          chuacheSpeaks('gameover');
+          gameTitle.textContent = '💀 ¡Estás MUERTO!';
+          checkAnswerButton.disabled = true;
+          clueButton.disabled = true;
+          skipButton.disabled  = true;
+          ansEN.disabled = true;
+          ansES.disabled = true;
 
-            if (name) {
-                const recordData = {
-                    name: name,
-                    score: score,
-                    mode: selectedGameMode,
-                    streak: bestStreak,
-                    level: (selectedGameMode === 'timer' || selectedGameMode === 'lives') ? currentLevel + 1 : null
-                };
-                (async () => {
-                    try {
-                        const { error } = await supabase.from('records').insert([recordData]);
-                        if (error) throw error;
-                        renderSetupRecords();
-                    } catch (error) {
-                        console.error("Error saving record:", error.message);
-                    } finally {
-                        fadeOutToMenu(quitToSettings);
-                    }
-                })();
-            }
-            return; 
+          if (name) {
+            const recordData = {
+              name: name,
+              score: score,
+              mode: selectedGameMode,
+              streak: bestStreak,
+              level: (selectedGameMode === 'timer' || selectedGameMode === 'lives') ? currentLevel + 1 : null
+            };
+            (async () => {
+              try {
+                const { error } = await supabase.from('records').insert([recordData]);
+                if (error) throw error;
+                renderSetupRecords();
+              } catch (error) {
+                console.error("Error saving record:", error.message);
+              } finally {
+                fadeOutToMenu(quitToSettings);
+              }
+            })();
+          }
+          return; 
         }
-    } else {
+      } else {
         updateGameTitle();
-    }
-    updateScore();
+      }
+      updateScore();
 
-    // *** MODIFICATION START ***
-    // Check if a hint is already showing. If not, generate a new one.
-    const hintIsAlreadyShowing = feedback.innerHTML.includes('💡') || feedback.innerHTML.includes('❌') || feedback.innerHTML.includes('hint-btn');
-    if (!hintIsAlreadyShowing) {
+      // *** NUEVA LÓGICA DE PISTAS CORREGIDA ***
+      // Check if a hint is already showing. If not, generate a new one.
+      const hintIsAlreadyShowing = feedback.innerHTML.includes('💡') || feedback.innerHTML.includes('❌') || feedback.innerHTML.includes('hint-btn');
+      if (!hintIsAlreadyShowing) {
+        // Primera respuesta incorrecta - mostrar pista
         if (currentOptions.mode === 'receptive') {
-            let hintMessage = `💡 The English infinitive is <strong>${currentQuestion.verb.infinitive_en}</strong>.`;
-            if (possibleCorrectAnswers && possibleCorrectAnswers.length > 0) {
-                const exampleAnswers = possibleCorrectAnswers.slice(0, Math.min(possibleCorrectAnswers.length, 3)).map(a => `'${a}'`);
-            } else {
-                hintMessage += `<br>Could not determine specific example answers. Check verb data.`;
-            }
+          let hintMessage = `💡 The English infinitive is <strong>${currentQuestion.verb.infinitive_en}</strong>.`;
+          if (possibleCorrectAnswers && possibleCorrectAnswers.length > 0) {
+            const exampleAnswers = possibleCorrectAnswers.slice(0, Math.min(possibleCorrectAnswers.length, 3)).map(a => `'${a}'`);
+          } else {
+            hintMessage += `<br>Could not determine specific example answers. Check verb data.`;
+          }
 
-            feedback.innerHTML = hintMessage;
-            ansEN.value = '';
-            setTimeout(() => ansEN.focus(), 0);
-            return;
+          feedback.innerHTML = hintMessage;
+          ansEN.value = '';
+          setTimeout(() => ansEN.focus(), 0);
+          return; // Solo hacer return aquí si es la primera pista
+          
         } else if (currentOptions.mode === 'productive' || currentOptions.mode === 'productive_easy') {
-            if (currentOptions.mode === 'productive_easy') {
-                if (currentQuestion.hintLevel === 0) {
-                    const conjTenseKey = currentQuestion.tenseKey;
-                    const conj = currentQuestion.verb.conjugations[conjTenseKey];
-					// Obtener pronombres activos de la configuración del jugador
-					const activePronounButtons = Array.from(document.querySelectorAll('.pronoun-group-button.selected'));
-					const activePronouns = activePronounButtons.flatMap(btn => JSON.parse(btn.dataset.values));
-					
-					// Orden correcto de pronombres para mostrar
-					const pronounOrder = ['yo', 'tú', 'vos', 'él', 'nosotros', 'vosotros', 'ellos'];
-					
-					// Filtrar y ordenar conjugaciones
-					const conjugationsToShow = pronounOrder
-					  .filter(pr => pr !== currentQuestion.pronoun && activePronouns.includes(pr))
-					  .filter(pr => conj[pr]) // Asegurar que existe la conjugación
-					  .map(pr => `<span class="hint-btn ${pr}">${conj[pr]}</span>`)
-					  .join('');
-					
-					const botones = conjugationsToShow;
-                    const tooltipText = "Orden de colores: yo(amarillo), tú(naranja), vos(naranja oscuro), él/ella(rosa), nosotros(morado), vosotros(azul), ellos/ellas(blanco)";
-					feedback.innerHTML = `❌ <em>Clue 1:</em> <span title="${tooltipText}">ℹ️</span> ` + botones;
-                    playFromStart(soundElectricShock);
-                    currentQuestion.hintLevel = 1;
-                }
-            } else {
-                if (currentQuestion.hintLevel === 0) {
-                    feedback.innerHTML = `❌ <em>Clue 1:</em> infinitive is <strong>${currentQuestion.verb.infinitive_es}</strong>.`;
-                    playFromStart(soundElectricShock);
-                    currentQuestion.hintLevel = 1;
-                } else if (currentQuestion.hintLevel === 1) {
-                    const conjTenseKey = currentQuestion.tenseKey;
-                    const conj = currentQuestion.verb.conjugations[conjTenseKey];
-                    const botones = Object.entries(conj || {})
-                        .filter(([pr]) => pr !== currentQuestion.pronoun)
-                        .map(([, form]) => `<span class="hint-btn">${form}</span>`)
-                        .join('');
-                    feedback.innerHTML = `❌ <em>Clue 2:</em> ` + botones;
-                    playFromStart(soundElectricShock);
-                    currentQuestion.hintLevel = 2;
-                }
+          if (currentOptions.mode === 'productive_easy') {
+            if (currentQuestion.hintLevel === 0) {
+              const conjTenseKey = currentQuestion.tenseKey;
+              const conj = currentQuestion.verb.conjugations[conjTenseKey];
+              // Obtener pronombres activos de la configuración del jugador
+              const activePronounButtons = Array.from(document.querySelectorAll('.pronoun-group-button.selected'));
+              const activePronouns = activePronounButtons.flatMap(btn => JSON.parse(btn.dataset.values));
+              
+              // Orden correcto de pronombres para mostrar
+              const pronounOrder = ['yo', 'tú', 'vos', 'él', 'nosotros', 'vosotros', 'ellos'];
+              
+              // Filtrar y ordenar conjugaciones
+              const conjugationsToShow = pronounOrder
+                .filter(pr => pr !== currentQuestion.pronoun && activePronouns.includes(pr))
+                .filter(pr => conj[pr]) // Asegurar que existe la conjugación
+                .map(pr => `<span class="hint-btn ${pr}">${conj[pr]}</span>`)
+                .join('');
+              
+              const botones = conjugationsToShow;
+              const tooltipText = "Orden de colores: yo(amarillo), tú(naranja), vos(naranja oscuro), él/ella(rosa), nosotros(morado), vosotros(azul), ellos/ellas(blanco)";
+              feedback.innerHTML = `❌ <em>Clue 1:</em> <span title="${tooltipText}">ℹ️</span> ` + botones;
+              playFromStart(soundElectricShock);
+              currentQuestion.hintLevel = 1;
             }
-            ansES.value = '';
-            setTimeout(() => ansES.focus(), 0);
+          } else {
+            if (currentQuestion.hintLevel === 0) {
+              feedback.innerHTML = `❌ <em>Clue 1:</em> infinitive is <strong>${currentQuestion.verb.infinitive_es}</strong>.`;
+              playFromStart(soundElectricShock);
+              currentQuestion.hintLevel = 1;
+            } else if (currentQuestion.hintLevel === 1) {
+              const conjTenseKey = currentQuestion.tenseKey;
+              const conj = currentQuestion.verb.conjugations[conjTenseKey];
+              const botones = Object.entries(conj || {})
+                .filter(([pr]) => pr !== currentQuestion.pronoun)
+                .map(([, form]) => `<span class="hint-btn">${form}</span>`)
+                .join('');
+              feedback.innerHTML = `❌ <em>Clue 2:</em> ` + botones;
+              playFromStart(soundElectricShock);
+              currentQuestion.hintLevel = 2;
+            }
+          }
+          ansES.value = '';
+          setTimeout(() => ansES.focus(), 0);
+          return; // Solo hacer return aquí si es la primera pista
         }
+      } else {
+        // *** CASO CRÍTICO: Ya hay una pista mostrada ***
+        // Segunda respuesta incorrecta o más - no generar nueva pista, pero SÍ continuar el juego
+        console.log('Hint already showing, not generating new hint but continuing game flow');
+        
+        // Limpiar los campos de entrada para permitir nueva respuesta
+        if (currentOptions.mode === 'receptive') {
+          ansEN.value = '';
+          setTimeout(() => ansEN.focus(), 0);
+        } else {
+          ansES.value = '';
+          setTimeout(() => ansES.focus(), 0);
+        }
+        
+        // IMPORTANTE: No hacer return aquí - dejar que el flujo continúe naturalmente
+        // El juego debe permitir que el usuario siga intentando o use skip/clue
+      }
+      
+      // Este código se ejecuta para respuestas incorrectas sin pistas nuevas
+      // No hacer return aquí - el juego debe continuar funcionando
     }
-    // If hintIsAlreadyShowing is true, this block is skipped, preserving the existing hint.
-    // *** MODIFICATION END ***
-  }
 }
 function startTimerMode() {
   document.getElementById('timer-container').style.display = 'flex';
